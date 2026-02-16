@@ -7,7 +7,7 @@
     <style>
         body { font-family: sans-serif; background: #121212; color: #e0e0e0; margin: 0; padding: 0; }
         
-        /* OPENING PAGE (COVER LOGO) */
+        /* STAGE 1: COVER LOGO PAGE */
         #opening-page {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
             background: #121212; z-index: 10000; display: flex; 
@@ -15,14 +15,14 @@
             text-align: center; padding: 20px; box-sizing: border-box;
         }
 
-        /* SPLASH PAGE (WELCOME.PNG) */
+        /* STAGE 2: SPLASH PAGE */
         #welcome-screen {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
             background: #121212; z-index: 9999; display: flex; 
             flex-direction: column; align-items: center; justify-content: center; 
             text-align: center; padding: 20px; box-sizing: border-box; 
             transition: opacity 0.8s ease, visibility 0.8s;
-            display: none; /* Hidden until cover is dismissed */
+            display: none; 
         }
 
         .splash-img {
@@ -39,7 +39,7 @@
         .toggle-btn { padding: 8px 20px; border-radius: 20px; border: none; font-weight: bold; cursor: pointer; color: #888; background: #222; margin: 0 5px; }
         .toggle-btn.active { color: #fff; }
         
-        /* THEME COLOR: PURPLE */
+        /* NEW PURPLE THEME */
         #btn-learn.active { background: #9C27B0; } 
         #btn-quiz.active { background: #27AE60; } 
         
@@ -61,8 +61,6 @@
         .btn-false { background: #e74c3c; color: white; }
         
         .feedback { margin-top: 10px; font-weight: bold; }
-        .feedback.correct { color: #2ecc71; }
-        .feedback.wrong { color: #e74c3c; }
         
         #audio-bar { display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 10px; }
         #player { height: 40px; width: 70%; }
@@ -106,12 +104,8 @@
         <div id="close-btn" onclick="closeModal()">✕</div>
         <div id="modal-content">
             <div id="story-title"></div>
-            <div id="view-learn">
-                <div id="story-text"></div>
-            </div>
-            <div id="view-quiz" style="display:none;">
-                <div id="quiz-area"></div>
-            </div>
+            <div id="view-learn"><div id="story-text"></div></div>
+            <div id="view-quiz" style="display:none;"><div id="quiz-area"></div></div>
         </div>
     </div>
 
@@ -221,14 +215,13 @@
 
     function checkAnswer(btn, ans, userAns) {
         const fb = btn.parentElement.parentElement.querySelector('.feedback');
-        if (ans === userAns) { fb.innerText = "✅ CORRECT!"; fb.className = "feedback correct"; }
-        else { fb.innerText = "❌ WRONG!"; fb.className = "feedback wrong"; }
+        if (ans === userAns) { fb.innerText = "✅ CORRECT!"; fb.style.color = "#2ecc71"; }
+        else { fb.innerText = "❌ WRONG!"; fb.style.color = "#e74c3c"; }
     }
 
     function closeModal() { modal.style.display = "none"; player.pause(); }
     function toggleSnail() { isSlowMode = !isSlowMode; player.playbackRate = isSlowMode ? 0.8 : 1.0; snailBtn.classList.toggle('active'); }
     
-    // NAVIGATION LOGIC
     function showWelcome() {
         document.getElementById('opening-page').style.display = 'none';
         document.getElementById('welcome-screen').style.display = 'flex';
