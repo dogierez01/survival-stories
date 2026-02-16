@@ -69,12 +69,12 @@
 <body>
 
     <div id="opening-page">
-        <img class="splash-img" src="https://raw.githubusercontent.com/dogierez01/survival-stories/main/logo.png" alt="Cover Logo">
+        <img class="splash-img" src="logo.png" alt="Cover Logo">
         <button class="nav-btn" onclick="showWelcome()">DEVAM ET</button>
     </div>
 
     <div id="welcome-screen">
-        <img class="splash-img" src="https://raw.githubusercontent.com/dogierez01/survival-stories/main/welcome.png" alt="Survival Stories Welcome">
+        <img class="splash-img" src="welcome.png" alt="Survival Stories Welcome">
         <button class="nav-btn" onclick="startApp()">DEVAM ET</button>
     </div>
 
@@ -167,16 +167,12 @@
         renderList();
     }
 
+    // AUDIO LOGIC UPDATED TO RELATIVE PATH
     function playSmartAudio(title) {
-        const USER = "dogierez01"; 
-        const REPO = "survival-stories"; 
-        const BASE_URL = `https://raw.githubusercontent.com/${USER}/${REPO}/main/`;
-        
-        // Exact filename matching for .m4a files provided by user
+        // Since files are in the same folder, we don't need a base URL
         const fileName = encodeURIComponent(title) + ".m4a";
-        player.src = BASE_URL + fileName;
+        player.src = fileName; // Relative path logic
         player.playbackRate = isSlowMode ? 0.8 : 1.0;
-        
         player.play().catch(e => { console.log("Audio not found: " + fileName); });
     }
 
@@ -219,7 +215,6 @@
     function closeModal() { modal.style.display = "none"; player.pause(); }
     function toggleSnail() { isSlowMode = !isSlowMode; player.playbackRate = isSlowMode ? 0.8 : 1.0; snailBtn.classList.toggle('active'); }
     
-    // SEQUENTIAL NAVIGATION LOGIC
     function showWelcome() {
         document.getElementById('opening-page').style.display = 'none';
         document.getElementById('welcome-screen').style.display = 'flex';
