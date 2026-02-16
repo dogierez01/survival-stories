@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Survival Stories</title>
+    <style>
+        body { font-family: sans-serif; background: #121212; color: #e0e0e0; margin: 0; padding: 0; }
+        
+        /* WELCOME SCREEN STYLES */
+        #welcome-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: #121212; z-index: 9999; display: flex; 
+            flex-direction: column; align-items: center; justify-content: center; 
+            text-align: center; padding: 20px; box-sizing: border-box; 
+            transition: opacity 0.8s ease, visibility 0.8s;
+        }
+
+        #header-area { position: fixed; top: 0; width: 100%; background: #000; border-bottom: 1px solid #333; z-index: 100; padding: 10px 0; text-align: center; }
+        #app-title { font-weight: 900; color: #fff; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 2px; }
+        .toggle-btn { padding: 8px 20px; border-radius: 20px; border: none; font-weight: bold; cursor: pointer; color: #888; background: #222; margin: 0 5px; }
+        .toggle-btn.active { color: #fff; }
+        #btn-learn.active { background: #E67E22; } 
+        #btn-quiz.active { background: #27AE60; } 
+        #content-area { padding: 20px; padding-top: 140px; max-width: 600px; margin: 0 auto; }
+        
+        .card { background: #1e1e1e; padding: 15px; margin-bottom: 15px; border-radius: 10px; border: 1px solid #333; }
+        .card-title { font-size: 18px; font-weight: bold; color: #fff; margin-bottom: 10px; }
+        
+        #modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 200; overflow-y: auto; }
+        #modal-content { padding: 20px; max-width: 600px; margin: 0 auto; padding-top: 60px; }
+        #close-btn { position: fixed; top: 20px; right: 20px; font-size: 30px; cursor: pointer; color: white; z-index: 300; background: #333; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+        
+        #story-title { font-size: 28px; color: #E67E22; margin-bottom: 20px; text-align: center; font-weight: 900; }
+        #story-text { font-size: 18px; line-height: 1.6; color: #ddd; text-align: justify; margin-bottom: 30px; display: none; }
+        .quiz-q { background: #222; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #444; }
+        .btn-tf { padding: 10px 20px; margin-top: 10px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; margin-right: 10px; flex: 1; }
+        .btn-true { background: #2ecc71; color: white; } 
+        .btn-false { background: #e74c3c; color: white; }
+        .feedback { margin-top: 10px; font-weight: bold; }
+        .feedback.correct { color: #2ecc71; }
+        .feedback.wrong { color: #e74c3c; }
+        
+        #audio-bar { display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 10px; }
+        #player { height: 40px; width: 70%; }
+        #btn-snail { background: #333; color: white; border: none; font-size: 24px; padding: 5px 15px; border-radius: 10px; cursor: pointer; }
+        #btn-snail.active { background: #E67E22; }
+    </style>
+</head>
+<body>
+
+    <div id="welcome-screen">
+        <h1 style="color: #E67E22; font-size: 3em; margin-bottom: 10px;">SURVIVAL</h1>
+        <p style="color: #aaa; margin-bottom: 30px;">True Stories of Human Resilience</p>
+        <button onclick="startApp()" style="padding:15px 50px; font-size:24px; font-weight:bold; background:#E67E22; color:white; border:none; border-radius:50px; cursor:pointer;">
+            BAŞLA
+        </button>
+    </div>
+
+    <div id="header-area">
+        <div id="app-title">🔥 Survival Stories</div>
+        <div>
+            <button id="btn-learn" class="toggle-btn active" onclick="setMode('learn')">📖 Stories</button>
+            <button id="btn-quiz" class="toggle-btn" onclick="setMode('quiz')">🧠 Quiz</button>
+        </div>
+        <div id="audio-bar">
+            <audio id="player" controls controlsList="nodownload"></audio>
+            <button id="btn-snail" onclick="toggleSnail()">🐌</button>
+        </div>
+    </div>
+
+    <div id="content-area">
+        <div id="list"></div>
+    </div>
+
+    <div id="modal">
+        <div id="close-btn" onclick="closeModal()">✕</div>
+        <div id="modal-content">
+            <div id="story-title"></div>
+            <div id="view-learn">
+                <div id="story-text"></div>
+            </div>
+            <div id="view-quiz" style="display:none;">
+                <div id="quiz-area"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    const db = [
+        { 
+            title: "The Ash Cloud (Volcano Eruption)", 
+            text: "Maria was a scientist studying a volcano. She thought it was safe, but the volcano exploded suddenly. A huge cloud of hot ash and rock came down the mountain. Maria jumped into her truck and drove fast. The ash cloud turned the day into night. She could not see the road. The engine stopped because of the dust. She had to get out and run. The air was hot and poisonous. She put a wet cloth over her mouth to breathe. She ran until she found a small cave to hide in. She waited there until the ash settled. A rescue team found her covered in gray dust.", 
+            questions: [ 
+                { q: "Maria was a scientist.", a: true }, 
+                { q: "The volcano exploded slowly.", a: false }, 
+                { q: "The truck stopped because it ran out of gas.", a: false }, 
+                { q: "The air was hot and poisonous.", a: true }, 
+                { q: "Maria hid in a cave.", a: true } 
+            ] 
+        },
+        { 
+            title: "The Big Wave (Tsunami)", 
+            text: "Sari was playing on a beach in Thailand. She saw the ocean water pull back very far. It looked strange. Then, a massive wall of water came back. It was a tsunami. The water hit the land with great power. Sari grabbed a palm tree and climbed up. The water destroyed houses and carried cars away below her. She held onto the tree for hours. Debris and wood hit her legs, but she did not let go. She was scared she would fall into the fast water. When the water finally went down, she was safe but alone. Her family found her later at a safe zone on a hill.", 
+            questions: [ 
+                { q: "The story happened in Thailand.", a: true }, 
+                { q: "The ocean water pulled back before the wave came.", a: true }, 
+                { q: "Sari climbed a building for safety.", a: false }, 
+                { q: "Sari held onto a tree for hours.", a: true }, 
+                { q: "Sari was with her family the whole time.", a: false } 
+            ] 
+        },
+        { 
+            title: "The Deep Dark (Mine Collapse)", 
+            text: "Luis was the boss of a copper mine. He worked with 32 other men deep underground. One day, the mine collapsed. A lot of rock blocked the exit. The men were trapped in a small safety room. It was hot, dark, and dusty. They only had food for two days. Luis became a strong leader. He told the men to eat only one spoon of tuna every two days to make the food last. They waited in the dark for 17 days. They did not know if help was coming. Finally, a drill broke through the ceiling. The men sent a note up that said, 'We are all okay.' Rescuers drilled a bigger hole and saved them.", 
+            questions: [ 
+                { q: "The men were trapped in a copper mine.", a: true }, 
+                { q: "They had food for 17 days at the start.", a: false }, 
+                { q: "Luis told the men to eat very little food.", a: true }, 
+                { q: "They were trapped for 17 days.", a: true }, 
+                { q: "The men used a phone to call for help.", a: false } 
+            ] 
+        },
+        { 
+            title: "The Drift (Solo Sea Survival)", 
+            text: "Arthur loved the ocean. He was sailing around the world alone on his boat. One night, something large hit his boat in the middle of the Atlantic Ocean. The boat sank very fast. Arthur jumped into a small rubber raft. He only had a speargun and a little bit of water. He floated on the ocean for 76 days. The sun was very hot, and he was always thirsty. He had a machine to make fresh water from salt water, but it broke often. He had to fix it with old parts to survive. Big fish hit the bottom of his raft, and sharks swam nearby. He saw big ships, but they did not see him. Finally, fishermen saw birds flying around his raft and found him.", 
+            questions: [ 
+                { q: "Arthur was sailing with a crew.", a: false }, 
+                { q: "His boat sank in the Atlantic Ocean.", a: true }, 
+                { q: "He spent 76 days in a rubber raft.", a: true }, 
+                { q: "His water machine worked perfectly.", a: false }, 
+                { q: "Birds helped fishermen find him.", a: true } 
+            ] 
+        },
+        { 
+            title: "The Fallen City (Earthquake Rubble)", 
+            text: "Elena was working in her office in a tall building. Suddenly, the ground shook violently. It was a massive earthquake. The building collapsed. Elena woke up in the dark. She was trapped under heavy concrete and metal. She could not move her legs. The air was full of dust, and it was hard to breathe. She had no water. She heard other people crying, but then they stopped. She found a metal pipe near her head. She used a rock to hit the pipe three times every hour. She did this for two days. Firefighters heard the noise and dug through the rocks to pull her out.", 
+            questions: [ 
+                { q: "Elena was outside when the earthquake hit.", a: false }, 
+                { q: "She could move her legs under the concrete.", a: false }, 
+                { q: "She signaled for help by hitting a pipe.", a: true }, 
+                { q: "She was trapped for two days.", a: true }, 
+                { q: "Firefighters heard her noise and saved her.", a: true } 
+            ] 
+        },
+        { 
+            title: "The Frozen Island (Polar Expedition)", 
+            text: "Captain James led a team to cross Antarctica. Their ship got stuck in thick ice and sank. The 28 men camped on the floating ice for months. When the ice melted, they used small lifeboats to go to a rocky island. It was cold and empty. James knew nobody would find them there. He took five men and one small boat. They sailed 800 miles across the most dangerous ocean in the world. They fought huge waves and strong winds for weeks. They reached a station on South Georgia Island. James returned with a rescue ship to save the rest of his crew. All the men survived.", 
+            questions: [ 
+                { q: "The ship sank because of ice.", a: true }, 
+                { q: "All the men died on the island.", a: false }, 
+                { q: "James sailed 800 miles to find help.", a: true }, 
+                { q: "The ocean was very calm.", a: false }, 
+                { q: "All 28 men survived.", a: true } 
+            ] 
+        },
+        { 
+            title: "The Great Bear (Forest Animal Attack)", 
+            text: "Hugh was a hunter in the deep forest. He surprised a mother bear and her cubs. The bear attacked him. It bit his leg and broke his ribs. Hugh pretended to be dead. The bear left him. Hugh was badly hurt and could not walk. He was miles from his camp. His friends were too far ahead to hear him. He had to crawl on the ground. He was in great pain. He ate berries and drank water from puddles. He crawled for five days. He had to hide from wolves. Finally, he reached a river and floated down on a log until his friends found him.", 
+            questions: [ 
+                { q: "The bear attacked Hugh because he surprised it.", a: true }, 
+                { q: "Hugh stayed dead until his friends arrived.", a: false }, 
+                { q: "He crawled for five days.", a: true }, 
+                { q: "He ate berries to survive.", a: true }, 
+                { q: "A helicopter rescued him.", a: false } 
+            ] 
+        },
+        { 
+            title: "The High Water (Urban Flood)", 
+            text: "Ken lived in a city near a big river. It rained for a week. The dam broke, and water rushed into the city. The water rose very fast, filling the first floor of his house. Ken climbed to the second floor, but the water kept rising. He had to climb out the window onto the roof. It was raining hard and very cold. He had no food. He watched cars floating by. He was afraid the house would wash away. He waved a red shirt at helicopters, but they were busy. He spent two nights on the roof. Finally, a neighbor with a boat came and took him to dry land.", 
+            questions: [ 
+                { q: "The flood happened because it rained for a week.", a: true }, 
+                { q: "Ken stayed in his kitchen during the flood.", a: false }, 
+                { q: "He waved a red shirt to signal helicopters.", a: true }, 
+                { q: "He spent five nights on the roof.", a: false }, 
+                { q: "A neighbor with a boat saved him.", a: true } 
+            ] 
+        },
+        { 
+            title: "The Ice Pocket (Sunken Ship)", 
+            text: "Thomas was a cook on a big boat. Early in the morning, a big wave hit the boat. It turned over and sank to the bottom of the ocean. Thomas was in the bathroom. He was thrown around in the dark water. Luckily, he found an air pocket in a cabin. This was a small space with air, but he was trapped underwater. He sat there for 60 hours. It was freezing cold and pitch black. He could hear fish eating nearby. He tried to stay calm to save oxygen. He did not know if anyone was coming. Divers came to find dead bodies, but Thomas grabbed a diver's hand. The diver was shocked. They helped Thomas swim to the surface safely.", 
+            questions: [ 
+                { q: "Thomas was the cook of the boat.", a: true }, 
+                { q: "He found a space with air underwater.", a: true }, 
+                { q: "He was trapped for 10 hours.", a: false }, 
+                { q: "The water was very cold.", a: true }, 
+                { q: "Thomas grabbed a diver's hand.", a: true } 
+            ] 
+        },
+        { 
+            title: "The Last One Left (Arctic Isolation)", 
+            text: "Elara joined an expedition to the Arctic to earn money. She was the only woman with four men. They went to a lonely island, but their supply ship never came. They ran out of food. Three men left to walk across the frozen sea for help, but they never returned. The last man got sick and died, leaving Elara all alone. She was scared, but she had to survive. She learned how to use a gun to hunt seals for food. She also had to scare away dangerous polar bears that came near her tent. She lived alone for two years. Finally, a ship arrived and found her alive and healthy.", 
+            questions: [ 
+                { q: "Elara was the only woman on the trip.", a: true }, 
+                { q: "The supply ship arrived on time.", a: false }, 
+                { q: "Elara hunted seals to eat.", a: true }, 
+                { q: "She lived alone for two weeks.", a: false }, 
+                { q: "She survived for two years.", a: true } 
+            ] 
+        },
+        { 
+            title: "The Lonely Island (Castaway)", 
+            text: "Tom was a fisherman working alone near the Pacific islands. A terrible storm destroyed his boat. He grabbed a piece of wood and floated to a tiny, empty island. He was completely alone. He had no food and no tools. His challenge was to find fresh water. He learned to break coconuts to drink the milk. He also had to make a fire without matches to stay warm at night. He felt very lonely and talked to a volleyball he found on the beach to stay sane. He lived there for four years. One day, a plane saw the smoke from his fire and sent a boat to rescue him.", 
+            questions: [ 
+                { q: "Tom's boat was destroyed by a storm.", a: true }, 
+                { q: "He had a toolbox on the island.", a: false }, 
+                { q: "He drank coconut milk.", a: true }, 
+                { q: "He stayed on the island for four years.", a: true }, 
+                { q: "A passing ship saw his clothes and stopped.", a: false } 
+            ] 
+        },
+        { 
+            title: "The Red Dirt (Outback Breakdown)", 
+            text: "The Smith family was driving across the Australian Outback. It was a very empty and hot place. Their car engine broke down. They were hundreds of miles from the nearest town. There was no phone signal. The father knew they should not leave the car because the car is easier to see from the sky. They had only two bottles of water. The heat was dangerous, over 40 degrees. They sat under the car for shade. They waited for four days. They were very weak. Finally, a plane flying overhead saw the sun reflecting off their car mirror and sent help.", 
+            questions: [ 
+                { q: "The family was in the Australian Outback.", a: true }, 
+                { q: "The father decided to walk for help.", a: false }, 
+                { q: "They sat under the car for shade.", a: true }, 
+                { q: "They were rescued after 4 days.", a: true }, 
+                { q: "A mirror helped the plane see them.", a: true } 
+            ] 
+        },
+        { 
+            title: "The Rising Water (Cave Flood)", 
+            text: "A soccer coach and 12 young boys went to explore a cave. It was a fun trip, but then it started to rain very hard outside. Water rushed into the cave. The group ran deeper inside to find dry ground. They were trapped on a small rock shelf. The water blocked the exit. They had no food and only flashlights. The air was getting thin. The coach taught the boys how to meditate to stay calm and save energy. They sat there for nine days in the dark. British divers found them. It took many days to teach the boys how to dive underwater to get out.", 
+            questions: [ 
+                { q: "There were 12 boys and a coach.", a: true }, 
+                { q: "They were trapped because of a fire.", a: false }, 
+                { q: "They stayed in the cave for nine days.", a: true }, 
+                { q: "The coach taught them how to meditate.", a: true }, 
+                { q: "They walked out of the cave easily.", a: false } 
+            ] 
+        },
+        { 
+            title: "The River's Path (Jungle Trek)", 
+            text: "Maya was a 17-year-old student. She flew with her mother over the Amazon jungle. Suddenly, lightning hit the plane. It broke apart in the sky. Maya fell into the trees, which saved her life. She woke up alone and hurt. Everyone else was dead. She remembered her father’s advice: 'If you are lost, follow the river to find people.' She walked for 11 days in the deep jungle. She had cuts on her arms, and insects laid eggs in her wounds. It was very painful. She saw crocodiles in the water but kept walking. She was very hungry and tired. Finally, she found a small boat and waited. Workers found her the next day and took her to a hospital.", 
+            questions: [ 
+                { q: "Maya fell into the ocean.", a: false }, 
+                { q: "She was the only survivor of the crash.", a: true }, 
+                { q: "She followed a river for 11 days.", a: true }, 
+                { q: "She had insects in her wounds.", a: true }, 
+                { q: "She found a helicopter in the jungle.", a: false } 
+            ] 
+        },
+        { 
+            title: "The Safari Guide (Savannah Predators)", 
+            text: "David was a tour guide in Africa. He was driving his jeep alone to check a trail. The jeep got stuck in deep mud. He could not move it. Night came, and he heard lions roaring. He was far from the camp. He did not have a gun, only a knife. The lions smelled him and circled the jeep. They tried to bite the tires. David had to stay inside the open jeep. He did not sleep all night. He was thirsty and terrified. The next day, the sun was very hot. He waited for two days with the lions nearby. Finally, another guide saw his tire tracks and came to rescue him.", 
+            questions: [ 
+                { q: "David's jeep got stuck in the mud.", a: true }, 
+                { q: "Lions circled the jeep at night.", a: true }, 
+                { q: "David had a big gun to protect himself.", a: false }, 
+                { q: "He was trapped for two days.", a: true }, 
+                { q: "He was found because of his tire tracks.", a: true } 
+            ] 
+        },
+        { 
+            title: "The Sandstorm Runner (Desert Dehydration)", 
+            text: "Giovanni was a police officer who loved running. He joined a long race across the Sahara Desert. On the fourth day, a bad sandstorm started. The wind blew sand everywhere, and Giovanni could not see. He lost the trail. He kept running, but he went the wrong way. He ran out of water quickly. He was lost in the hot desert for nine days. He was so thirsty that he caught bats in an old building and drank their blood. He also drank his own urine. He wanted to die, but he kept walking. He lost 33 pounds. Finally, he found a camp of nomadic people. They gave him milk and saved him.", 
+            questions: [ 
+                { q: "Giovanni was in a race in the desert.", a: true }, 
+                { q: "A sandstorm made him lose the trail.", a: true }, 
+                { q: "He was lost for two days.", a: false }, 
+                { q: "He drank bat blood to survive.", a: true }, 
+                { q: "He lost 33 pounds.", a: true } 
+            ] 
+        },
+        { 
+            title: "The Snow Trap (Blizzard in Car)", 
+            text: "Sarah and John were driving home for Christmas. A heavy blizzard started. The snow fell very fast. Their car slid off the road and into a ditch. They could not get out. The snow covered the whole car. They were trapped inside. It was freezing. They knew they could not run the engine all the time because they would run out of gas or get poisoned. They ran the car for ten minutes every hour to get warm. They had no food, only some candy. They huddled together for three days. A snowplow driver saw the antenna of their car sticking out of the snow and dug them out.", 
+            questions: [ 
+                { q: "Their car slid into a ditch.", a: true }, 
+                { q: "Snow covered the car completely.", a: true }, 
+                { q: "They kept the engine running 24 hours a day.", a: false }, 
+                { q: "They were trapped for three days.", a: true }, 
+                { q: "A pilot saw them from the sky.", a: false } 
+            ] 
+        },
+        { 
+            title: "The Stone Grip (Canyon Trap)", 
+            text: "Leo loved adventure. He went hiking alone in a narrow canyon in Utah. While he was climbing down, a big rock moved. It fell and trapped his right arm against the canyon wall. Leo could not move. He had very little water and no food. He stood in the same spot for five days. He yelled for help, but nobody heard him. He drank his own urine because he was so thirsty. He knew he would die there. So, Leo made a brave and scary decision. He used a small, dull knife to cut off his own arm. He was free. He climbed down a cliff with one hand and walked six miles. A family on a hike found him.", 
+            questions: [ 
+                { q: "A rock trapped Leo's leg.", a: false }, 
+                { q: "He was stuck for five days.", a: true }, 
+                { q: "Leo cut off his own arm to escape.", a: true }, 
+                { q: "He walked 20 miles after escaping.", a: false }, 
+                { q: "A family found him while hiking.", a: true } 
+            ] 
+        },
+        { 
+            title: "The Void (Glacier Crevasse)", 
+            text: "Simon and Joe were climbing a high mountain in Peru. On the way down, Joe fell and broke his leg. Simon tried to lower Joe down with a rope. But Joe slipped over a cliff edge and hung in the air during a storm. Simon could not pull him up. To save himself, Simon cut the rope. Joe fell deep into a hole in the ice called a crevasse. Simon thought Joe was dead. But Joe was alive on a small ledge. He could not climb up, so he lowered himself deeper into the dark hole. He found a way out at the bottom. He crawled for three days with a broken leg and no food. He reached the camp just before Simon left.", 
+            questions: [ 
+                { q: "Joe broke his leg.", a: true }, 
+                { q: "Simon cut the rope to save himself.", a: true }, 
+                { q: "Joe died in the ice hole.", a: false }, 
+                { q: "Joe crawled for three days.", a: true }, 
+                { q: "Joe reached the camp after Simon had already left.", a: false } 
+            ] 
+        },
+        { 
+            title: "The Wall of Fire (Forest Fire)", 
+            text: "Jack was camping in a national park. He smelled smoke. Suddenly, a huge forest fire appeared over the hill. The fire moved faster than a car. Jack tried to run to his car, but the fire blocked the road. He was surrounded by flames and thick smoke. He could not breathe well. He saw a river nearby. He jumped into the water and covered his head with a wet jacket. The fire burned the trees all around him. The heat was intense. He stayed in the water for five hours until the fire passed. A ranger found him the next morning.", 
+            questions: [ 
+                { q: "The fire moved faster than a car.", a: true }, 
+                { q: "Jack hid in his car to escape the fire.", a: false }, 
+                { q: "He jumped into a river to survive.", a: true }, 
+                { q: "He stayed in the water for 5 hours.", a: true }, 
+                { q: "A ranger found him the next morning.", a: true } 
+            ] 
+        },
+        { 
+            title: "The White Silence (Mountain Plane Crash)", 
+            text: "Marcus and Elias were on a university sports team. They flew over snowy mountains in a small plane to play a game. Suddenly, the wind pushed the plane down, and it crashed into the snow. Many of their friends died in the crash. The survivors had no warm clothes and very little food. It was extremely cold. They waited for help, but nobody came. After ten days, they heard on a radio that the police stopped looking for them. They were starving. Elias made a very hard choice to eat the bodies of their dead friends to stay alive. Later, a large amount of snow fell on their plane. Marcus and Elias knew they had to move. They walked for 12 days across the dangerous mountains without climbing equipment. Finally, they saw a farmer and asked for help. Helicopters came the next day.", 
+            questions: [ 
+                { q: "The plane crashed into the ocean.", a: false }, 
+                { q: "The police stopped looking for them after 10 days.", a: true }, 
+                { q: "They ate dead bodies to survive.", a: true }, 
+                { q: "They walked for 12 days to find help.", a: true }, 
+                { q: "They had professional climbing tools.", a: false } 
+            ] 
+        }
+    ];
+
+    const list = document.getElementById('list');
+    const modal = document.getElementById('modal');
+    const player = document.getElementById('player');
+    const snailBtn = document.getElementById('btn-snail');
+
+    let currentMode = 'learn'; 
+    let isSlowMode = false;
+
+    function renderList() {
+        if (!list) return;
+        list.innerHTML = db.map((item, i) => {
+            if (currentMode === 'learn') {
+                return `
+                    <div class="card" style="border-left:5px solid #E67E22;">
+                        <div class="card-title">${i+1}. ${item.title}</div>
+                        <div style="display:flex; gap:10px;">
+                            <button onclick="playAudioOnly(${i})" style="flex:1; padding:12px; background:#333; color:#fff; border:1px solid #555; border-radius:8px; cursor:pointer; font-weight:bold;">🔊 Listen</button>
+                            <button onclick="openReadMode(${i})" style="flex:1; padding:12px; background:#E67E22; color:#fff; border:none; border-radius:8px; cursor:pointer; font-weight:bold;">📖 Read</button>
+                        </div>
+                    </div>`;
+            } else {
+                return `
+                    <div class="card" onclick="openQuizMode(${i})" style="cursor:pointer; border-left: 5px solid #27AE60;">
+                        <div class="card-title">${item.title}</div>
+                        <div style="font-size:12px; color:#aaa; margin-top:5px;">Tap to start Quiz 🧠</div>
+                    </div>`;
+            }
+        }).join('');
+    }
+
+    function setMode(mode) {
+        currentMode = mode;
+        document.getElementById('btn-learn').className = (mode === 'learn') ? 'toggle-btn active' : 'toggle-btn';
+        document.getElementById('btn-quiz').className = (mode === 'quiz') ? 'toggle-btn active' : 'toggle-btn';
+        if(modal.style.display === "block") {
+            document.getElementById('view-learn').style.display = (mode === 'learn') ? 'block' : 'none';
+            document.getElementById('view-quiz').style.display = (mode === 'quiz') ? 'block' : 'none';
+        }
+        renderList();
+    }
+
+    function playSmartAudio(title) {
+        const USER = "dogierez01"; 
+        const REPO = "word-history"; 
+        const BASE_URL = `https://raw.githubusercontent.com/${USER}/${REPO}/main/`;
+        
+        // Exact filename matching for .m4a files provided by user
+        const fileName = encodeURIComponent(title) + ".m4a";
+        player.src = BASE_URL + fileName;
+        player.playbackRate = isSlowMode ? 0.8 : 1.0;
+        
+        player.play().catch(e => { console.log("Audio not found: " + fileName); });
+    }
+
+    function playAudioOnly(i) { playSmartAudio(db[i].title); }
+
+    function openReadMode(i) {
+        const item = db[i];
+        modal.style.display = "block";
+        document.getElementById('story-title').innerText = item.title;
+        document.getElementById('view-learn').style.display = 'block';
+        document.getElementById('view-quiz').style.display = 'none';
+        document.getElementById('story-text').innerText = item.text;
+        document.getElementById('story-text').style.display = 'block';
+        playSmartAudio(item.title);
+    }
+
+    function openQuizMode(i) {
+        const item = db[i];
+        modal.style.display = "block";
+        document.getElementById('story-title').innerText = item.title;
+        document.getElementById('view-learn').style.display = 'none';
+        document.getElementById('view-quiz').style.display = 'block';
+        player.pause(); 
+        document.getElementById('quiz-area').innerHTML = item.questions.map((q, idx) => `
+            <div class="quiz-q">
+                <div style="font-weight:bold; margin-bottom:10px;">${idx+1}. ${q.q}</div>
+                <div style="display:flex; gap:10px;">
+                    <button class="btn-tf btn-true" onclick="checkAnswer(this, ${q.a}, true)">TRUE</button>
+                    <button class="btn-tf btn-false" onclick="checkAnswer(this, ${q.a}, false)">FALSE</button>
+                </div>
+                <div class="feedback"></div>
+            </div>`).join('');
+    }
+
+    function checkAnswer(btn, ans, userAns) {
+        const fb = btn.parentElement.parentElement.querySelector('.feedback');
+        if (ans === userAns) { fb.innerText = "✅ CORRECT!"; fb.className = "feedback correct"; }
+        else { fb.innerText = "❌ WRONG!"; fb.className = "feedback wrong"; }
+    }
+
+    function closeModal() { modal.style.display = "none"; player.pause(); }
+
+    function toggleSnail() {
+        isSlowMode = !isSlowMode;
+        player.playbackRate = isSlowMode ? 0.8 : 1.0;
+        snailBtn.classList.toggle('active');
+    }
+
+    function startApp() {
+        const screen = document.getElementById('welcome-screen');
+        if(screen) {
+            screen.style.opacity = '0';
+            screen.style.visibility = 'hidden';
+            setTimeout(() => { screen.style.display = 'none'; }, 800);
+        }
+    }
+
+    renderList();
+</script>
+</body>
+</html>
